@@ -5,7 +5,7 @@ class RolesController < ApplicationController
 
   def index
     @role  = Role.new
-    @roles = Role.order(:created_at)
+    @roles = Role.alive.order(:role)
   end
 
   def show; end
@@ -35,7 +35,7 @@ class RolesController < ApplicationController
 
   def destroy
     @role.destroy
-    redirect_to roles_path, notice: "Role deleted."
+    redirect_to roles_path, notice: "Role moved to trash."
   end
 
   private

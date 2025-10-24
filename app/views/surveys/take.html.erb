@@ -1,5 +1,5 @@
 <script>
-  window.__ROLES__ = <%= raw Role.order(:role).select(:id, :role).to_json %>;
+  window.__ROLES__ = <%= raw Role.alive.order(:role).select(:id, :role).to_json %>;
 </script>
 
 <script type="application/json" id="survey-json"><%= raw @survey.to_json %></script>
