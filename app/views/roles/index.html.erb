@@ -6,11 +6,11 @@
 <%= form_with model: @role, url: roles_path, class: "space-y-4" do |f| %>
   <div>
     <%= f.label :role, class: "block text-sm font-medium" %>
-    <%= f.text_field :role, class: "mt-1 block w-full border rounded p-2" %>
+    <%= f.text_field :role, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2" %>
   </div>
   <div>
     <%= f.label :slug, class: "block text-sm font-medium" %>
-    <%= f.text_field :slug, class: "mt-1 block w-full border rounded p-2" %>
+    <%= f.text_field :slug, class: "shadow-sm focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-2" %>
   </div>
   <%= f.submit "Add Role", class: "px-4 py-2 rounded bg-indigo-600 text-white" %>
 <% end %>

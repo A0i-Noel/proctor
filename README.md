@@ -3,6 +3,7 @@
 **Submitted by:** Aoi Kuriki  
 **Completion Date:** October 24, 2025  
 **Forked Repository:** [https://github.com/A0i-Noel/proctor](https://github.com/A0i-Noel/proctor)
+**Email:** aoi727noel@gmail.com 
 
 ---
 
@@ -11,7 +12,7 @@
 ```bash
 # 1. Install dependencies
 bundle install
-yarn install
+npm install
 
 # 2. Setup the database
 bin/rails db:create db:migrate db:seed
