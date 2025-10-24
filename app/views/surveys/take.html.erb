@@ -1,20 +1,57 @@
+<script>
+  window.__ROLES__ = <%= raw Role.order(:role).select(:id, :role).to_json %>;
+</script>
+
+<script type="application/json" id="survey-json"><%= raw @survey.to_json %></script>
+<script type="application/json" id="questions-json"><%= raw @questions_payload.to_json %></script>
+
 <div class="bg-white shadow overflow-hidden sm:rounded-lg">
   <div class="px-4 py-5 sm:px-6">
     <h1 class="text-2xl font-bold text-gray-900"><%= @survey.title %></h1>
     <p class="mt-1 max-w-2xl text-sm text-gray-500"><%= @survey.description %></p>
   </div>
-  
+
   <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
     <!-- React Take Survey Component -->
-    <div id="take-survey-container" 
-         data-survey="<%= @survey.to_json %>" 
-         data-questions="<%= @questions.to_json %>">
-    </div>
+    <div id="take-survey-container"></div>
+
     
     <!-- Fallback for when JavaScript is disabled -->
     <noscript>
       <%= form_with(url: submit_survey_path(@survey), method: :post, class: "space-y-6") do |form| %>
         <% if @questions.any? %>
+        <fieldset class="block text-sm font-medium text-gray-700 border-b-2 border-gray-200" >
+          <legend class="block text-sm font-medium text-gray-700">Your role</legend>
+
+          <div class="mt-2 space-y-2" data-controller="survey-visibility">
+            <% Role.order(:role).each do |r| %>
+              <label class="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="response[role_id]"
+                  value="<%= r.id %>"
+                  class="h-4 w-4"
+                  data-action="input->survey-visibility#refresh" />
+                <span class="text-sm"><%= r.role %></span>
+              </label>
+            <% end %>
+
+            <!-- Optional "show all" choice. If selected, treat as no filtering -->
+            <label class="flex items-center gap-2">
+              <input
+                type="radio"
+                name="response[role_id]"
+                value=""
+                class="h-4 w-4"
+                data-action="input->survey-visibility#refresh" />
+              <span class="text-sm">I’m not sure / show all</span>
+            </label>
+          </div>
+
+          <p class="mt-2 text-xs text-gray-500">
+            Pick exactly one. If you leave it blank, all questions will be shown.
+          </p>
+        </fieldset>
           <% @questions.each do |question| %>
             <div class="bg-gray-50 p-4 rounded-md mb-4">
               <h3 class="text-lg font-medium text-gray-900 mb-2"><%= question.content %></h3>

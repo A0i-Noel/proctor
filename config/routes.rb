@@ -3,6 +3,9 @@ Rails.application.routes.draw do
 
   # Set the root path to the surveys index
   root "surveys#index"
+
+  resources :roles, path: "role", param: :slug,
+            only: [:index, :show, :new, :create, :edit, :update, :destroy]
   
   # RESTful routes for surveys
   resources :surveys do
@@ -15,6 +18,6 @@ Rails.application.routes.draw do
       post 'submit'
     end
     # Route for creating responses
-    resources :responses, only: [:create]
+    resources :responses, only: [:create, :index]
   end
 end

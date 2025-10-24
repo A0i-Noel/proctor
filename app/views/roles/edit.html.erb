@@ -1,0 +1,30 @@
+<h1 class="text-2xl font-bold mb-4">Edit Role</h1>
+
+<%= form_with model: @role, class: "space-y-6" do |f| %>
+  <% if @role.errors.any? %>
+    <div class="bg-red-50 p-4 rounded-md">
+      <h3 class="text-sm font-medium text-red-800">
+        <%= pluralize(@role.errors.count, "error") %> prevented saving:
+      </h3>
+      <ul class="mt-2 text-sm text-red-700 list-disc pl-5">
+        <% @role.errors.full_messages.each do |msg| %><li><%= msg %></li><% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div>
+    <%= f.label :role, class: "block text-sm font-medium" %>
+    <%= f.text_field :role, class: "mt-1 block w-full border rounded p-2" %>
+  </div>
+
+  <div>
+    <%= f.label :slug, class: "block text-sm font-medium" %>
+    <%= f.text_field :slug, class: "mt-1 block w-full border rounded p-2" %>
+    <p class="mt-2 text-xs text-gray-500">lowercase, numbers, dashes</p>
+  </div>
+
+  <div class="flex gap-3">
+    <%= link_to "Cancel", roles_path, class: "bg-white py-2 px-4 border rounded-md text-sm" %>
+    <%= f.submit "Save", class: "px-4 py-2 rounded bg-indigo-600 text-white" %>
+  </div>
+<% end %>

@@ -1,0 +1,42 @@
+<div class="flex justify-between w-full">
+<h1 class="text-xl font-semibold mb-4">Roles</h1>
+<%= link_to "Back to Surveys", surveys_path, class: "inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50" %>
+</div>
+
+<%= form_with model: @role, url: roles_path, class: "space-y-4" do |f| %>
+  <div>
+    <%= f.label :role, class: "block text-sm font-medium" %>
+    <%= f.text_field :role, class: "mt-1 block w-full border rounded p-2" %>
+  </div>
+  <div>
+    <%= f.label :slug, class: "block text-sm font-medium" %>
+    <%= f.text_field :slug, class: "mt-1 block w-full border rounded p-2" %>
+  </div>
+  <%= f.submit "Add Role", class: "px-4 py-2 rounded bg-indigo-600 text-white" %>
+<% end %>
+
+<hr class="my-6" />
+
+<table class="w-full text-left">
+  <thead>
+    <tr>
+      <th class="py-2">Role</th>
+      <th class="py-2">Slug</th>
+      <th class="py-2"></th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @roles.each do |role| %>
+      <tr class="border-t">
+        <td class="py-2"><%= role.role %></td>
+        <td class="py-2"><%= role.slug %></td>
+        <td class="py-2 space-x-2">
+          <%= link_to "Edit", edit_role_path(role), class: "text-indigo-600 hover:underline" %>
+          <%= link_to "Delete", role_path(role),
+                data: { turbo_method: :delete, turbo_confirm: "Delete this role?" },
+                class: "text-red-600 hover:underline" %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 
+
 const TextQuestion = ({ question, onChange }) => {
   return (
     <div className="mt-1">
@@ -101,6 +102,7 @@ const TakeSurvey = (props) => {
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState([]);
   const [submitted, setSubmitted] = useState(false);
+  const [selectedRoleId, setSelectedRoleId] = useState(null);
 
   const handleInputChange = (questionId, value) => {
     setResponses({
@@ -109,13 +111,21 @@ const TakeSurvey = (props) => {
     });
   };
 
+  const visibleQuestions = questions.filter(q => {
+    if (!q.target_role_ids || q.target_role_ids.length === 0) return true; 
+    if (selectedRoleId === null) return true;
+    return q.target_role_ids.includes(selectedRoleId);
+  });
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setErrors([]);
 
     // Validate responses
-    const requiredQuestions = questions.filter(q => q.required);
+    // Validate responses ONLY for visible required questions
+    const requiredQuestions = visibleQuestions.filter(q => q.required);
     const missingResponses = requiredQuestions.filter(q => !responses[q.id]);
     
     if (missingResponses.length > 0) {
@@ -131,20 +141,24 @@ const TakeSurvey = (props) => {
     }));
 
     const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+    const payload = {
+    response: {
+      survey_id: survey.id,
+      question_responses_attributes: formattedResponses,
+      respondent_role_id: selectedRoleId
+    }
+  };
     
     try {
       const response = await fetch(`/surveys/${survey.id}/responses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          "Accept": "application/json",
           'X-CSRF-Token': csrfToken
         },
-        body: JSON.stringify({
-          response: {
-            survey_id: survey.id,
-            question_responses_attributes: formattedResponses
-          }
-        })
+         body: JSON.stringify(payload)    
       });
 
       if (response.ok) {
@@ -341,8 +355,37 @@ const TakeSurvey = (props) => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">{survey.title}</h1>
-      <p className="mb-6">{survey.description}</p>
+      <fieldset className="mb-6">        
+        <legend className="block text-sm font-medium text-gray-700">Your role</legend>
+        <div className="mt-2 space-y-2">
+         {(window.__ROLES__ || []).map(r => (
+           <label key={r.id} className="flex items-center gap-2">
+             <input
+               type="radio"
+               name="respondent_role"
+               className="h-4 w-4"
+               value={r.id}
+               checked={selectedRoleId === r.id}
+               onChange={() => setSelectedRoleId(r.id)}
+             />
+             <span className="text-sm">{r.role}</span>
+           </label>
+         ))}
+         {/* Fallback "show all" */}
+         <label className="flex items-center gap-2">
+           <input
+             type="radio"
+             name="respondent_role"
+             className="h-4 w-4"
+             value=""
+             checked={selectedRoleId === null}
+             onChange={() => setSelectedRoleId(null)}
+           />
+           <span className="text-sm">I’m not sure / show all</span>
+         </label>
+       </div>
+       <p className="mt-2 text-xs text-gray-500">Pick one. If none selected, all questions are shown.</p>
+      </fieldset>
       
       {errors.length > 0 && (
         <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
@@ -364,7 +407,7 @@ const TakeSurvey = (props) => {
       )}
       
       <form onSubmit={handleSubmit}>
-        {questions.map(question => (
+        {visibleQuestions.map(question => (
           <div key={question.id} className="mb-6 p-4 bg-white shadow rounded">
             {renderQuestion(question)}
           </div>
@@ -386,22 +429,29 @@ const TakeSurvey = (props) => {
 
 // Use a self-executing function to initialize the component
 const initializeTakeSurvey = () => {
-  const container = document.getElementById('take-survey-container');
-  if (container && !container.hasAttribute('data-react-initialized')) {
-    const surveyData = JSON.parse(container.dataset.survey || '{}');
-    const questionsData = JSON.parse(container.dataset.questions || '[]');
-    
-    // Mark as initialized to prevent double initialization
-    container.setAttribute('data-react-initialized', 'true');
-    
-    const root = createRoot(container);
-    root.render(
-      <TakeSurvey 
-        survey={surveyData} 
-        questions={questionsData}
-      />
-    );
+  const container = document.getElementById("take-survey-container");
+  const surveyScript   = document.getElementById("survey-json");
+  const questionsScript = document.getElementById("questions-json");
+
+  // Wait until everything exists in the DOM
+  if (!container || !surveyScript || !questionsScript) return;
+
+  if (container.hasAttribute("data-react-initialized")) return;
+
+  let surveyData = {};
+  let questionsData = [];
+
+  try {
+    surveyData    = JSON.parse(surveyScript.textContent || "{}");
+    questionsData = JSON.parse(questionsScript.textContent || "[]");
+  } catch (e) {
+    console.error("Failed to parse survey/questions JSON:", e);
+    return; // bail so we don't render a broken app
   }
+
+  container.setAttribute("data-react-initialized", "true");
+  const root = createRoot(container);
+  root.render(<TakeSurvey survey={surveyData} questions={questionsData} />);
 };
 
 // Try to initialize immediately

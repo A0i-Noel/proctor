@@ -2,35 +2,40 @@ class QuestionsController < ApplicationController
   before_action :set_survey
   before_action :set_question, only: [:edit, :update, :destroy]
 
+
   def new
     @question = @survey.questions.new
   end
 
   def create
-    @question = @survey.questions.new(question_params)
-    process_options
+    @question = @survey.questions.new(question_params.except(:target_role_ids))
+    process_options(@question)
 
-    if @question.save
-      redirect_to survey_path(@survey), notice: 'Question was successfully created.'
-    else
-      render :new, status: :unprocessable_entity
+    ActiveRecord::Base.transaction do
+      @question.save!
+      sync_targets(@question)
     end
+
+    redirect_to survey_path(@survey), notice: "Question was successfully created."
+  rescue ActiveRecord::RecordInvalid
+    render :new, status: :unprocessable_entity
   end
 
   def edit
   end
 
   def update
-    if @question.update(question_params)
-      process_options
-      if @question.save
-        redirect_to survey_path(@survey), notice: 'Question was successfully updated.'
-      else
-        render :edit, status: :unprocessable_entity
-      end
-    else
-      render :edit, status: :unprocessable_entity
+    ActiveRecord::Base.transaction do
+      @question.assign_attributes(question_params.except(:target_role_ids))
+      process_options(@question)
+
+      @question.save!
+      sync_targets(@question)                     # ← replaces join rows to match form
     end
+
+    redirect_to survey_path(@survey), notice: "Question was successfully updated."
+  rescue ActiveRecord::RecordInvalid
+    render :edit, status: :unprocessable_entity
   end
 
   def destroy
@@ -49,15 +54,20 @@ class QuestionsController < ApplicationController
   end
   
   def question_params
-    params.require(:question).permit(:content, :question_type, :position, :required, options: [])
+    params.require(:question).permit(:content, :question_type, :position, :required, options: [],target_role_ids: [] )
   end
   
-  def process_options
-    if params[:question][:options].present? && ['multiple_choice', 'checkbox'].include?(@question.question_type)
-      # Split the options by newline and remove any blank lines
-      @question.options = params[:question][:options].split("\n").map(&:strip).reject(&:blank?)
+  def process_options(q)
+    if params.dig(:question, :options).present? && %w[multiple_choice checkbox].include?(q.question_type)
+      q.options = params[:question][:options].to_s.split("\n").map(&:strip).reject(&:blank?)
     else
-      @question.options = []
+      q.options = []
     end
+  end
+  
+  def sync_targets(q)
+    raw_ids = Array(params.dig(:question, :target_role_ids))
+    ids = raw_ids.map { |v| Integer(v) rescue nil }.compact.uniq
+    q.target_roles = Role.where(id: ids)          # ActiveRecord updates question_role_targets
   end
 end
