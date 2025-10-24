@@ -1,131 +1,127 @@
-# Proctor: Basic Survey Application
+# Survey Platform Enhancement — Coding Challenge Submission
 
-This is a coding challenge created by DX. It houses a basic survey application that will serve as the basis for the challenge.
+**Submitted by:** Aoi Kuriki  
+**Completion Date:** October 24, 2025  
+**Forked Repository:** [https://github.com/A0i-Noel/proctor](https://github.com/A0i-Noel/proctor)
 
-## Challenge Description
-The scenario: We want to be able customize questions in the survey depending on the role of the person responding (i.e. Data Engineer, Frontend Engineer, Product Manager, etc.).
+---
 
-Here's what we'd like to see:
-* Implement a way to define the different branches of a survey and the questions that are shown or hidden for each branch
-* Update the respondent experience to collect their role and then display the appropriate questions based on the branch
-* (If time allows) Add a way to analyze the response data between the different branches
+## How to Run Locally
 
-The boilerplate code provides a very basic survey application with the ability to create surveys, add questions, and collect responses. Your job is to extend this functionality to support branching.
+```bash
+# 1. Install dependencies
+bundle install
+yarn install
 
-Any and all existing code or seed data can be edited in any way. Anything that's here is purely to serve as a functional starting point to begin building off of.
+# 2. Setup the database
+bin/rails db:create db:migrate db:seed
 
-## Evaluation Criteria
-The purpose of this exercise is to evaluate how you would implement a moderately complex feature, consider tradeoffs, and explain your thinking on a real project. We are not evaluating your ability to implement algorithms from scratch — feel free to use tools or libraries that you would reach for in your actual day to day work.
+# 3. Start the development server
+bin/dev
 
-## Technology Stack
+# Then open your browser to:
+http://localhost:3000/surveys
+```
 
-- **Backend**: Ruby on Rails 7
-- **Frontend**: React with esbuild
-- **Styling**: Tailwind CSS
-- **Database**: PostgreSQL
+You can:
 
-## Getting Started
+- Create and manage roles
 
-### Prerequisites
+- Add a survey and questions
 
-- Ruby 3.1.3 or higher
-- PostgreSQL
-- Node.js (for JavaScript and CSS processing)
+- Assign target roles to questions
 
-### Setup Instructions (macOS)
+- Take surveys as different roles
 
-#### Install Dependencies with Homebrew
+- View role-filtered response results
 
-1. Install Homebrew (if not already installed)
-   ```bash
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   ```
+---
 
-2. Install Ruby via rbenv
-   ```bash
-   brew install rbenv ruby-build
-   echo 'eval "$(rbenv init -)"' >> ~/.zshrc  # or ~/.bash_profile for bash users
-   source ~/.zshrc  # or source ~/.bash_profile for bash users
-   rbenv install 3.1.3
-   rbenv global 3.1.3
-   ruby -v  # Verify installation
-   ```
+## Project Overview
 
-3. Install PostgreSQL
-   ```bash
-   brew install postgresql@15
-   brew services start postgresql@15
-   ```
+This implementation extends the base survey platform to support role-based visibility, grouped submissions, analyzing responses per roles, and soft deletion.
+It enhances both the question creation experience and data analytics capabilities.
 
-4. Install Node.js
-   ```bash
-   # Install nvm (Node Version Manager) for better Node.js version management
-   brew install nvm
+## Usage Instructions
 
-   # Create NVM's working directory if it doesn't exist
-   mkdir -p ~/.nvm
+### Questioner (Company Side)
 
-   # Add NVM to your shell profile
-   echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.zshrc
-   echo '[ -s "/usr/local/opt/nvm/nvm.sh" ] && . "/usr/local/opt/nvm/nvm.sh"' >> ~/.zshrc
-   echo '[ -s "/usr/local/opt/nvm/etc/bash_completion.d/nvm" ] && . "/usr/local/opt/nvm/etc/bash_completion.d/nvm"' >> ~/.zshrc
+1. **Manage Roles:**  
+   Start by setting available roles using the **“Manage Role”** button (`/role`).
 
-   # Source the updated profile
-   source ~/.zshrc
+2. **Create Questions:**  
+   When adding a new question, you can specify which roles it targets.  
+   - Leaving all roles unchecked will make the question visible to **everyone**.
 
-   # Install and use Node.js version 20 (compatible with the project dependencies)
-   nvm install 20
-   nvm use 20
+3. **View Responses:**  
+   For each survey, you can open **“Responses”** to view all submissions per candidate.  
+   - You can filter responses by role.  
+   - The system uses **soft-delete** for roles, meaning even if a role is deleted or edited later, its related responses will still be visible.
 
-   # Verify installation
-   node -v
-   ```
+---
 
-#### Project Setup
+### Respondent (Developer Side)
 
-1. Clone this repository
-   ```bash
-   git clone <repository-url>
-   cd proctor
-   ```
+1. **Role Selection:**  
+   Each survey begins by asking for the respondent’s role (this question always appears first, regardless of other question order).
 
-2. Install Ruby dependencies
-   ```bash
-   gem install bundler
-   bundle install
-   ```
+2. **Filtered Questions:**  
+   Based on the selected role, the respondent will only see questions relevant to them.
 
-3. Install JavaScript dependencies
-   ```bash
-   npm install
-   ```
+---
 
-4. Setup the database
-   ```bash
-   bin/rails db:create
-   bin/rails db:migrate
-   bin/rails db:seed
-   ```
+## Idea per target audience
 
-5. Start the Rails server and build the frontend assets
-   ```bash
-   bin/dev
-   ```
+Questioner (company side): Set and manege the role globally and filter the response per roles. For the future extension, setting color schema to each role will help visually compare the responses with any graphs.
 
-6. Visit `http://localhost:3000` in your browser
+Respondent (Developer side): Only the necessary question will be visible, and if they have auth to record the role in their user object, they can see only the necessary survey in the future.
 
-## React Components
+---
 
-The application uses React for the frontend. The main components are:
+## Features Implemented
 
-- **SurveyForm**: For creating and editing surveys
-- **QuestionList**: For displaying and managing questions
-- **TakeSurvey**: For taking surveys and submitting responses
+### 1. Role-Based Question Targeting
+- Each question can now specify one or more target roles.
+- Target role IDs are stored in `questions.target_role_ids` as an array.
+- Questions without target roles are visible to all respondents.
+#### Changes:
+- `QuestionsController` and `question_params` updated.
+- `questions/_form.html.erb` now includes role checkboxes.
+- `SurveysController#take` serializes role targeting info for the React component.
+- Visibility logic added to the React `TakeSurvey` component.
 
-These components are located in the `app/javascript/components` directory.
+### 2. Dynamic Role Visibility During Survey Taking
+- The respondent selects a single role at the top of the survey.
+- Questions dynamically appear or disappear based on the selected role.
+- Required fields are ignored if hidden, preventing submission errors.
 
-## Submission
+### 3. Submission and Response Grouping
+- Each completed survey generates:
+   - A single Submission record.
+   - Multiple Response records linked to that submission.
+__Schema Additions:__
 
-Please fork this github repo, and include your solution as a PR to the forked repo with clear instructions on how to run your code. Include any notes or explanations in the README or as comments in your code.
+```ruby
+create_table :submissions do |t|
+  t.references :survey, null: false, foreign_key: true
+  t.references :role, foreign_key: true
+  t.timestamps
+end
 
-Good luck!
+add_reference :responses, :submission, foreign_key: true
+```
+
+__Controller Updates:__
+ResponsesController#create now:
+- Creates a Submission tied to the selected role.
+- Creates multiple Response records within a single transaction.
+
+### 4. Response Dashboard and Analytics
+- Added `ResponsesController#index` to display grouped submissions.
+- Responses are organized per submission block.
+- A total count of submissions is shown by role.
+- Added role filter buttons (`All`, plus each role) to filter visible responses.
+- Includes empty-state handling (“No responses submitted.”).
+
+### 5. Soft-Delete Roles
+Soft deletion allows deactivating roles while preserving history in responses and submissions.
